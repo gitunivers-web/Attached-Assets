@@ -17,7 +17,7 @@ export default function Listings() {
 
   const [cityFilter, setCityFilter] = useState(initialCity);
   const [showPremiumOnly, setShowPremiumOnly] = useState(initialType);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000]);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -29,7 +29,7 @@ export default function Listings() {
     return ALL_APARTMENTS.filter(apt => {
       if (cityFilter && !apt.location.city.toLowerCase().includes(cityFilter.toLowerCase())) return false;
       if (showPremiumOnly && !apt.isPremium) return false;
-      if (apt.pricing.perNight && (apt.pricing.perNight < priceRange[0] || apt.pricing.perNight > priceRange[1])) return false;
+      if (apt.pricing.perNight && (apt.pricing.perNight < priceRange[0] || (priceRange[1] < 3000 && apt.pricing.perNight > priceRange[1]))) return false;
       if (apt.bedrooms < minBedrooms) return false;
       return true;
     });
@@ -56,12 +56,12 @@ export default function Listings() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Prix par nuit (€)</h3>
-          <span className="text-sm font-medium">{priceRange[0]}€ - {priceRange[1]}€{priceRange[1] === 1000 ? '+' : ''}</span>
+          <span className="text-sm font-medium">{priceRange[0]}€ - {priceRange[1] >= 3000 ? '3000€+' : `${priceRange[1]}€`}</span>
         </div>
         <input 
           type="range" 
           min="0" 
-          max="1000" 
+          max="3000" 
           step="50"
           value={priceRange[1]}
           onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
