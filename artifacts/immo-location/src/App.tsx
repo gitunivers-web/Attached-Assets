@@ -1,6 +1,7 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppProvider } from "@/context/AppContext";
+import LoginModal from "@/components/shared/LoginModal";
 
 // Pages
 import Home from "@/pages/Home";
@@ -11,6 +12,7 @@ import Payment from "@/pages/Payment";
 import Favorites from "@/pages/Favorites";
 import Cart from "@/pages/Cart";
 import Success from "@/pages/Success";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,7 @@ function Router() {
       <Route path="/favoris" component={Favorites} />
       <Route path="/panier" component={Cart} />
       <Route path="/confirmation" component={Success} />
+      <Route path="/profil" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -37,6 +40,7 @@ function App() {
       <AppProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
+          <LoginModal />
         </WouterRouter>
       </AppProvider>
     </QueryClientProvider>
