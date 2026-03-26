@@ -1,0 +1,70 @@
+Crée une maquette (mockup) complète, réaliste et navigable d’un site web de location d’appartements (courte durée, mensuelle et annuelle).
+
+🎯 Objectif
+
+Concevoir une plateforme moderne de type marketplace immobilière permettant aux utilisateurs de rechercher, visualiser et réserver des appartements de manière fluide, sans visite physique.
+
+🏠 Catalogue de biens
+Intégrer au minimum 160 appartements différents
+Chaque appartement doit inclure :
+Un titre (ex : “Appartement moderne 2 chambres – centre-ville”)
+Une description détaillée
+Localisation
+Prix :
+par nuit
+par mois
+par an
+📸 Médias (très important)
+
+Pour chaque appartement :
+
+Minimum 4 à 6 images réelles :
+intérieur (salon, chambre, cuisine, salle de bain)
+extérieur (immeuble, quartier, vue)
+Une vidéo immersive :
+simulation de visite (slideshow ou vidéo intégrée)
+avec une musique légère en fond
+objectif : remplacer ou limiter les visites physiques
+🧩 Fonctionnalités
+Pages :
+Accueil
+Liste des appartements
+Fiche détaillée
+Réservation
+Paiement
+Système de recherche avec filtres :
+prix
+nombre de chambres
+type de location (journalière / mensuelle / annuelle)
+localisation
+Fonctionnalités supplémentaires :
+calendrier de disponibilité (mock)
+bouton “réserver”
+panier ou récapitulatif de réservation
+paiement en ligne (simulation uniquement)
+🎨 Design & expérience utilisateur
+Design moderne, inspiré des grandes plateformes comme Airbnb ou Booking.com
+Interface claire, haut de gamme
+Responsive (mobile, tablette, desktop)
+Navigation fluide et intuitive
+Mise en avant des images et vidéos
+⚙️ Contraintes techniques
+Frontend uniquement (HTML, CSS, JavaScript)
+Aucune logique backend réelle
+Données simulées mais réalistes
+Code propre, structuré et commenté
+💡 Bonus (fortement recommandé)
+Avis clients fictifs ⭐
+Système de favoris ❤️
+Appartements similaires
+Carte interactive (mock)
+Animations (hover, transitions)
+
+⚠️ Le site doit donner l’impression d’un produit réel prêt à être lancé, avec un catalogue riche (160+ biens) et une expérience immersive (images + vidéos), même si tout reste en simulation.
+
+🎯 Objectif final : obtenir une démo ultra crédible, proche d’une vraie plateforme immobilière professionnelle.
+
+🚀 Conseil pro (important)
+
+👉 160 appartements avec images + vidéos = lourd
+Donc “Utiliser un système de génération dynamique ou autres qui te convient pour éviter de coder chaque appartement manuellement.”
