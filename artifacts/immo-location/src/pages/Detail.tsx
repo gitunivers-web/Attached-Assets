@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { getApartmentById } from '@/data/mock-data';
 import { useAppContext } from '@/context/AppContext';
 import { formatPrice, cn } from '@/lib/utils';
-import { MapPin, Star, Heart, Share, Play, Check, ChevronLeft, Calendar, BedDouble, Bath, Maximize, X } from 'lucide-react';
+import { MapPin, Star, Heart, Share, Play, Pause, Check, ChevronLeft, ChevronRight, Calendar, BedDouble, Bath, Maximize, X, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Detail() {
@@ -21,6 +21,83 @@ export default function Detail() {
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState(1);
+
+  // Virtual tour state
+  const [tourSlide, setTourSlide] = useState(0);
+  const [tourPlaying, setTourPlaying] = useState(true);
+  const [tourProgress, setTourProgress] = useState(0);
+  const [tourMuted, setTourMuted] = useState(false);
+  const tourIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tourProgressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const SLIDE_DURATION = 5000;
+  const ROOM_LABELS = ['Salon Principal', 'Chambre Master', 'Cuisine Gastronomique', 'Salle de Bain', 'Vue Extérieure'];
+
+  const stopTourTimers = useCallback(() => {
+    if (tourIntervalRef.current) clearInterval(tourIntervalRef.current);
+    if (tourProgressRef.current) clearInterval(tourProgressRef.current);
+  }, []);
+
+  const startTourTimers = useCallback((images: string[]) => {
+    stopTourTimers();
+    setTourProgress(0);
+    const progressTick = 50;
+    tourProgressRef.current = setInterval(() => {
+      setTourProgress(p => {
+        if (p >= 100) return 0;
+        return p + (progressTick / SLIDE_DURATION) * 100;
+      });
+    }, progressTick);
+    tourIntervalRef.current = setInterval(() => {
+      setTourSlide(s => (s + 1) % images.length);
+      setTourProgress(0);
+    }, SLIDE_DURATION);
+  }, [stopTourTimers]);
+
+  useEffect(() => {
+    if (showVirtualTour && apartment) {
+      setTourSlide(0);
+      setTourProgress(0);
+      setTourPlaying(true);
+      startTourTimers(apartment.images);
+      // ambient audio
+      if (!audioRef.current) {
+        audioRef.current = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3');
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.18;
+      }
+      if (!tourMuted) audioRef.current.play().catch(() => {});
+    } else {
+      stopTourTimers();
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+    }
+    return () => stopTourTimers();
+  }, [showVirtualTour]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (tourMuted) { audioRef.current.pause(); }
+    else if (showVirtualTour && tourPlaying) { audioRef.current.play().catch(() => {}); }
+  }, [tourMuted]);
+
+  const handleTourPlayPause = (images: string[]) => {
+    if (tourPlaying) {
+      stopTourTimers();
+      audioRef.current?.pause();
+    } else {
+      startTourTimers(images);
+      if (!tourMuted) audioRef.current?.play().catch(() => {});
+    }
+    setTourPlaying(p => !p);
+  };
+
+  const handleTourNav = (dir: number, images: string[]) => {
+    stopTourTimers();
+    setTourSlide(s => (s + dir + images.length) % images.length);
+    setTourProgress(0);
+    if (tourPlaying) startTourTimers(images);
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -311,31 +388,132 @@ export default function Detail() {
           </motion.div>
         )}
 
-        {/* Virtual Tour Modal */}
+        {/* Virtual Tour Modal — Immersive Slideshow */}
         {showVirtualTour && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-[200] bg-black flex flex-col"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black flex flex-col select-none"
           >
-            <div className="absolute top-4 right-4 z-10">
-              <button onClick={() => setShowVirtualTour(false)} className="p-3 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur transition-colors">
-                <X className="w-6 h-6" />
-              </button>
+            {/* Slide images with Ken Burns zoom effect */}
+            <div className="absolute inset-0 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={tourSlide}
+                  src={apartment.images[tourSlide % apartment.images.length]}
+                  alt={ROOM_LABELS[tourSlide % ROOM_LABELS.length]}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={{ opacity: 0, scale: 1.08 }}
+                  animate={{ opacity: 1, scale: tourPlaying ? 1.0 : 1.03 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 1.2, ease: 'easeInOut' }}
+                />
+              </AnimatePresence>
+              {/* Dark gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
             </div>
-            <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-              <div className="absolute inset-0">
-                <img src={apartment.images[0]} className="w-full h-full object-cover opacity-50 blur-sm" alt="Tour bg" />
+
+            {/* Top bar */}
+            <div className="relative z-10 flex items-center justify-between px-6 pt-5 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                <span className="text-white/90 font-medium text-sm tracking-wide uppercase">Visite Virtuelle</span>
               </div>
-              <div className="relative z-10 text-center text-white p-8 max-w-2xl bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-                <Play className="w-16 h-16 mx-auto mb-6 text-secondary opacity-80" />
-                <h2 className="text-3xl font-serif mb-4">Visite Virtuelle Interactive</h2>
-                <p className="text-white/70 mb-8">
-                  Découvrez l'intégralité de cet espace prestigieux comme si vous y étiez. Déplacez-vous de pièce en pièce.
-                </p>
-                <div className="inline-block bg-white/10 px-6 py-3 rounded-lg text-sm border border-white/20">
-                  Simulation de player 3D Matterport™
+              <div className="flex items-center gap-3">
+                {/* Mute button */}
+                <button
+                  onClick={() => setTourMuted(m => !m)}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur transition-all"
+                  title={tourMuted ? 'Activer le son' : 'Couper le son'}
+                >
+                  {tourMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
+                {/* Close button */}
+                <button
+                  onClick={() => setShowVirtualTour(false)}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Slide dots / thumbnails */}
+            <div className="relative z-10 flex justify-center gap-2 mt-2">
+              {apartment.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => { setTourSlide(idx); setTourProgress(0); if (tourPlaying) startTourTimers(apartment.images); }}
+                  className={cn(
+                    'rounded-full transition-all duration-300',
+                    idx === tourSlide
+                      ? 'w-8 h-2 bg-secondary'
+                      : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                  )}
+                />
+              ))}
+            </div>
+
+            {/* Centre area — room label */}
+            <div className="flex-1 relative z-10 flex items-end justify-center pb-8 pointer-events-none">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={tourSlide}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  className="text-center"
+                >
+                  <p className="text-white/50 text-xs uppercase tracking-[0.25em] mb-1">
+                    Pièce {tourSlide + 1} / {apartment.images.length}
+                  </p>
+                  <h2 className="text-white text-3xl md:text-5xl font-serif font-bold drop-shadow-lg">
+                    {ROOM_LABELS[tourSlide % ROOM_LABELS.length]}
+                  </h2>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Bottom controls bar */}
+            <div className="relative z-10 px-6 pb-6 flex flex-col gap-3">
+              {/* Progress bar */}
+              <div className="w-full h-0.5 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-secondary rounded-full"
+                  style={{ width: `${tourProgress}%` }}
+                  transition={{ duration: 0.05, ease: 'linear' }}
+                />
+              </div>
+
+              {/* Controls row */}
+              <div className="flex items-center justify-between">
+                <div className="text-white/60 text-sm hidden md:block">
+                  {apartment.title}
+                </div>
+                <div className="flex items-center gap-4 mx-auto md:mx-0">
+                  <button
+                    onClick={() => handleTourNav(-1, apartment.images)}
+                    className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur transition-all hover:scale-110"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={() => handleTourPlayPause(apartment.images)}
+                    className="p-4 rounded-full bg-secondary hover:bg-secondary/80 text-white shadow-lg shadow-secondary/40 transition-all hover:scale-110"
+                  >
+                    {tourPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                  </button>
+                  <button
+                    onClick={() => handleTourNav(1, apartment.images)}
+                    className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur transition-all hover:scale-110"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="text-white/40 text-xs hidden md:block">
+                  {Math.ceil((100 - tourProgress) / 100 * SLIDE_DURATION / 1000)}s
                 </div>
               </div>
             </div>
