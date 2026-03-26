@@ -93,7 +93,7 @@ function randomCity() {
 const generateApartments = (): Apartment[] => {
   const apartments: Apartment[] = [];
   
-  for (let i = 1; i <= 300; i++) {
+  for (let i = 1; i <= 400; i++) {
     const city = randomCity();
     const type = randomItem(TYPES);
     const surface = type === 'Studio' ? randomInt(20, 35) : 
