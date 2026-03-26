@@ -5,7 +5,7 @@ import Footer from '@/components/layout/Footer';
 import { getApartmentById } from '@/data/mock-data';
 import { useAppContext } from '@/context/AppContext';
 import { formatPrice, cn } from '@/lib/utils';
-import { MapPin, Star, Heart, Share, Play, Check, ChevronLeft, Calendar, BedDouble, Bath, Maximize } from 'lucide-react';
+import { MapPin, Star, Heart, Share, Play, Check, ChevronLeft, Calendar, BedDouble, Bath, Maximize, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Detail() {
